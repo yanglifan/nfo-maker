@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>豆瓣 NFO Maker</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>豆瓣 NFO Maker</h1>
+      <p class="subtitle">从豆瓣生成 Kodi / Emby / Jellyfin / UGNAS 兼容的 NFO 元数据文件</p>
+    </header>
+
+    <section class="input-section">
+      <div class="input-group">
+        <input type="text" id="urlInput" placeholder="请输入豆瓣电影/剧集 URL，如 https://movie.douban.com/subject/1292052/" />
+        <button id="parseBtn" type="button">解析</button>
+      </div>
+      <p class="hint">示例: https://movie.douban.com/subject/1292052/</p>
+    </section>
+
+    <div id="errorMsg" class="error-msg" style="display:none;"></div>
+    <div id="loading" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      <span>正在解析豆瓣页面...</span>
+    </div>
+
+    <section id="previewSection" class="preview-section" style="display:none;">
+      <h2>解析结果预览</h2>
+      <div class="preview-card">
+        <div class="preview-main">
+          <div class="preview-poster">
+            <img id="previewPoster" src="" alt="海报" />
+          </div>
+          <div class="preview-info">
+            <h3 id="previewTitle" class="preview-title"></h3>
+            <p id="previewOrigTitle" class="preview-orig-title"></p>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">类型</span>
+                <span id="previewGenres" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">导演</span>
+                <span id="previewDirectors" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">编剧</span>
+                <span id="previewWriters" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">年份</span>
+                <span id="previewYear" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">评分</span>
+                <span id="previewRating" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">国家/地区</span>
+                <span id="previewCountries" class="info-value"></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">片长</span>
+                <span id="previewRuntime" class="info-value"></span>
+              </div>
+              <div id="episodesRow" class="info-item" style="display:none;">
+                <span class="info-label">集数</span>
+                <span id="previewEpisodes" class="info-value"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="preview-plot">
+          <span class="info-label">剧情简介</span>
+          <p id="previewPlot"></p>
+        </div>
+        <div class="preview-actors">
+          <span class="info-label">演员</span>
+          <p id="previewActors"></p>
+        </div>
+      </div>
+
+      <div class="type-switch">
+        <span class="type-label">NFO 类型：</span>
+        <label class="radio-label">
+          <input type="radio" name="nfoType" value="movie" id="typeMovie" /> 电影 (movie.nfo)
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="nfoType" value="tvshow" id="typeTvshow" /> 剧集 (tvshow.nfo)
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="downloadBtn" type="button" class="btn-primary">下载 NFO 文件</button>
+        <button id="copyBtn" type="button" class="btn-secondary">复制 XML</button>
+      </div>
+
+      <div id="xmlPreview" class="xml-preview" style="display:none;">
+        <h3>XML 预览</h3>
+        <pre id="xmlContent"></pre>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>支持: Kodi &middot; Emby &middot; Jellyfin &middot; UGNAS &middot; NFO 文件格式兼容主流媒体中心</p>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

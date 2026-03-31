@@ -1,0 +1,17 @@
+{
+  "name": "nfo-maker",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Generate NFO metadata files from Douban movie/TV pages",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0"
+  }
+}
