@@ -271,102 +271,106 @@ async function fetchCelebrityPhoto(celebUrl, retries = 2) {
 }
 
 /**
- * Fetch landscape fanart from movie/TV show photos page.
- * Returns the first large photo URL (landscape-oriented) or empty string.
+ * Fetch landscape fanart from movie/TV show page.
+ * Returns the first landscape photo URL or empty string.
+ * 
+ * Strategy:
+ * 1. Use already-fetched HTML (passed from scraper) to avoid re-fetching
+ * 2. Extract photo links from the main page
+ * 3. Convert thumbnail URL to large size directly (avoid fetching photo detail page)
+ * 
+ * @param {string} subjectUrl - The douban subject URL
+ * @param {string} cachedHtml - Already fetched HTML (optional)
  */
-async function fetchFanart(photosUrl, retries = 2) {
-  const ua = randomUA();
-  const cookies = `bid=${randomBid()}`;
+async function fetchFanart(subjectUrl, cachedHtml) {
+  try {
+    // Step 1: Use cached HTML or fetch new
+    const mainBody = cachedHtml || await fetchPage(subjectUrl);
+    const $ = cheerio.load(mainBody);
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const result = await fetchFollowRedirects(photosUrl, { ua }, cookies);
-
-      if (result.status !== 200) {
-        if (attempt < retries) {
-          await new Promise(r => setTimeout(r, attempt * 1000));
-          continue;
-        }
-        return '';
+    // Step 2: Find photo links - they look like /photos/photo/{id}/
+    let photoDetailUrl = '';
+    $('a[href*="/photos/photo/"]').each((_, el) => {
+      const href = $(el).attr('href');
+      if (href && !photoDetailUrl) {
+        photoDetailUrl = href.startsWith('http') ? href : new URL(href, subjectUrl).href;
       }
+    });
 
-      // Check if we got a challenge page
-      const challenge = extractChallenge(result.body);
-      let finalBody = result.body;
-
-      if (challenge) {
-        // Solve the proof-of-work
-        const nonce = solveChallenge(challenge.cha, 4);
-        const challengeOrigin = new URL(result.finalUrl).origin;
-        const postUrl = challengeOrigin + '/c';
-
-        const formBody = new URLSearchParams({
-          tok: challenge.tok,
-          cha: challenge.cha,
-          sol: String(nonce),
-          red: challenge.red || photosUrl,
-        });
-
-        const result2 = await fetchFollowRedirects(postUrl, {
-          ua,
-          method: 'POST',
-          body: formBody.toString(),
-          extraHeaders: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Origin': challengeOrigin,
-            'Referer': result.finalUrl,
-          },
-        }, result.cookies);
-
-        finalBody = result2.body;
-      }
-
-      const $ = cheerio.load(finalBody);
-      // Find photos - typically in .article .photo-item or similar structure
-      // Try to get the first large image from the photos page
-      let fanartUrl = '';
-
-      // Try selector for large photo (poster section usually has larger images)
-      const largePhoto = $('.article a.cover').first();
-      if (largePhoto.length) {
-        fanartUrl = largePhoto.attr('href') || '';
-        // The href might be the photo detail page, we need the actual image
-        if (fanartUrl) {
-          // Extract image from photo detail page
-          const imgResult = await fetchFollowRedirects(fanartUrl, { ua }, result.cookies);
-          if (imgResult.status === 200) {
-            const $$ = cheerio.load(imgResult.body);
-            const img = $$('#mainpic img').first();
-            if (img.length) {
-              fanartUrl = img.attr('src') || '';
-              // Convert to large size and webp format
-              fanartUrl = fanartUrl.replace(/\/view\/photo\/[^/]+\//, '/view/photo/l/');
-              fanartUrl = fanartUrl.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
-            }
-          }
-        }
-      }
-
-      // Fallback: try direct image from photos list
-      if (!fanartUrl) {
-        const photoImg = $('.article .photo-list img').first();
-        if (photoImg.length) {
-          fanartUrl = photoImg.attr('src') || '';
-          // Convert to large size and webp format
-          fanartUrl = fanartUrl.replace(/\/view\/photo\/[^/]+\//, '/view/photo/l/');
-          fanartUrl = fanartUrl.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
-        }
-      }
-
-      return fanartUrl;
-    } catch {
-      if (attempt < retries) {
-        await new Promise(r => setTimeout(r, attempt * 1000));
-        continue;
-      }
+    if (!photoDetailUrl) {
       return '';
     }
+
+    // Step 3: Extract photo ID from URL and construct large image URL directly
+    // Photo URL format: https://movie.douban.com/photos/photo/2635663142/
+    // Image URL format: https://img3.doubanio.com/view/photo/l/public/p2635663142.jpg
+    const photoIdMatch = photoDetailUrl.match(/\/photo\/(\d+)\//);
+    if (!photoIdMatch) {
+      return '';
+    }
+    
+    const photoId = photoIdMatch[1];
+    
+    // Construct the large image URL directly (without fetching detail page)
+    // Use common douban image CDN domains
+    const fanartUrl = `https://img3.doubanio.com/view/photo/l/public/p${photoId}.webp`;
+    
+    return fanartUrl;
+  } catch (err) {
+    console.error('[fetchFanart] Error:', err.message);
+    return '';
   }
 }
 
-module.exports = { fetchPage, fetchCelebrityPhoto, fetchFanart, fetchFollowRedirects };
+module.exports = { fetchPage, fetchCelebrityPhoto, fetchFanart, fetchFollowRedirects, downloadImage };
+
+/**
+ * Download an image from URL and save to local file.
+ * @param {string} imageUrl - The image URL to download
+ * @param {string} filePath - Local file path to save
+ * @returns {Promise<boolean>} Success status
+ */
+async function downloadImage(imageUrl, filePath) {
+  if (!imageUrl) return false;
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    // Ensure parent directory exists
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Convert .webp to .jpg for better compatibility
+    const finalPath = filePath.replace(/\.webp$/i, '.jpg');
+
+    // Extract douban referer from image URL
+    const referer = imageUrl.includes('doubanio.com') ? 'https://movie.douban.com/' : imageUrl;
+
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': randomUA(),
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Referer': referer,
+        'Origin': 'https://movie.douban.com',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`[downloadImage] Failed to download ${imageUrl}: ${response.status}`);
+      return false;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    fs.writeFileSync(finalPath, buffer);
+    console.log(`[downloadImage] Saved: ${finalPath}`);
+    return true;
+  } catch (err) {
+    console.error(`[downloadImage] Error downloading ${imageUrl}:`, err.message);
+    return false;
+  }
+}

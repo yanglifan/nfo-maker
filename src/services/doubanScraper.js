@@ -60,10 +60,8 @@ async function scrape(url, options = {}) {
   // Fetch actor photos if actors have celebUrl
   await fetchActorPhotos(data, requestInterval);
 
-  // Fetch fanart (landscape cover) if photosUrl is available
-  if (data.photosUrl) {
-    data.fanart = await fetchFanart(data.photosUrl, 2);
-  }
+  // Fetch fanart (landscape cover) - pass already-fetched HTML to avoid re-fetching
+  data.fanart = await fetchFanart(url, html);
 
   return data;
 }

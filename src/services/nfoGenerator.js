@@ -102,8 +102,16 @@ function generate(data) {
   // Poster
   xml += xmlTag('poster', data.poster);
 
-  // Fanart (landscape cover for wall view)
-  xml += xmlTag('fanart', data.fanart);
+  // Thumb (cover for wall view - used by Kodi/Emby/Jellyfin)
+  xml += xmlTag('thumb', data.poster);
+
+  // Fanart (landscape cover for detail page background)
+  // Use nested <thumb> structure for better compatibility
+  if (data.fanart) {
+    xml += '  <fanart>\n';
+    xml += xmlTag('thumb', data.fanart, '    ');
+    xml += '  </fanart>\n';
+  }
 
   xml += `</${rootTag}>\n`;
 
