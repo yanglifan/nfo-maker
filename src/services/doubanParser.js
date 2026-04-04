@@ -16,7 +16,10 @@ function parse(html, url) {
   const year = yearText.replace(/[()（）]/g, '');
 
   // Split Chinese title and original title
-  const { title, originalTitle } = splitTitle(fullTitle);
+  const { title: rawTitle, originalTitle } = splitTitle(fullTitle);
+
+  // Convert Chinese season numbers to Arabic: 第一季 -> 第1季
+  const title = convertChineseSeasonNum(rawTitle);
 
   // Directors
   const directors = [];
@@ -27,12 +30,25 @@ function parse(html, url) {
   // Writers - extracted from #info block
   const writers = extractInfoField($, '编剧');
 
-  // Actors
+  // Actors - extract name and celebrity URL from v:starring links (limit to first 10)
   const actors = [];
+  let actorCount = 0;
   $(SELECTORS.STARRING).each((_, el) => {
+    if (actorCount >= 10) return; // limit to 10 actors
+
     const name = $(el).text().trim();
+    const href = $(el).attr('href') || '';
     if (name) {
-      actors.push({ name, role: '' });
+      // Extract personage ID from URL: https://www.douban.com/personage/27260288/
+      // Or legacy format: https://movie.douban.com/celebrity/1234567/
+      const personageMatch = href.match(/personage\/(\d+)/);
+      const celebrityMatch = href.match(/celebrity\/(\d+)/);
+      const celebId = personageMatch ? personageMatch[1] : (celebrityMatch ? celebrityMatch[1] : '');
+      const celebUrl = personageMatch
+        ? `https://www.douban.com/personage/${personageMatch[1]}/`
+        : (celebrityMatch ? `https://movie.douban.com/celebrity/${celebrityMatch[1]}/` : '');
+      actors.push({ name, role: '', celebId, celebUrl });
+      actorCount++;
     }
   });
 
@@ -77,12 +93,23 @@ function parse(html, url) {
     plot = summaryEl.text().trim().replace(/\s+/g, ' ');
   }
 
-  // Poster
+  // Poster - convert to large photo format
   let poster = '';
   const posterEl = $(SELECTORS.POSTER);
   if (posterEl.length) {
     poster = posterEl.attr('src') || '';
+    if (poster) {
+      // Convert s_ratio_poster or other thumbnail formats to /photo/l/ large size
+      poster = poster.replace(/\/view\/photo\/[^/]+\//, '/view/photo/l/');
+      // Convert to .webp format
+      poster = poster.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
+    }
   }
+
+  // Fanart (landscape cover) - extract from photos page URL
+  // Will be fetched separately in doubanScraper
+  let fanart = '';
+  const photosUrl = `${url}photos/`;
 
   // Countries
   const countriesRaw = extractInfoText($, '制片国家/地区');
@@ -125,8 +152,44 @@ function parse(html, url) {
     languages,
     runtime,
     poster,
+    fanart,
+    photosUrl,
     episodes,
   };
+}
+
+/**
+ * Convert a Chinese numeral string to an Arabic number.
+ * Handles values 一 through 九十九.
+ */
+function chineseNumToArabic(str) {
+  const digits = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+
+  if (digits[str]) return digits[str];    // 一~九
+  if (str === '十') return 10;            // 十
+
+  if (str.startsWith('十')) {             // 十一~十九
+    return 10 + (digits[str[1]] || 0);
+  }
+
+  const tenIdx = str.indexOf('十');
+  if (tenIdx > 0) {                       // 二十~九十九
+    const tens = digits[str[0]] * 10;
+    const ones = str[tenIdx + 1] ? digits[str[tenIdx + 1]] || 0 : 0;
+    return tens + ones;
+  }
+
+  return null;
+}
+
+/**
+ * Replace Chinese season number in title: 第一季 -> 第1季
+ */
+function convertChineseSeasonNum(title) {
+  return title.replace(/第([一二三四五六七八九十]+)季/g, (match, chNum) => {
+    const num = chineseNumToArabic(chNum);
+    return num !== null ? `第${num}季` : match;
+  });
 }
 
 /**

@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 24px 16px;
 }
@@ -157,6 +157,19 @@ body {
   width: 100%;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.preview-fanart {
+  flex-shrink: 0;
+  width: 200px;
+}
+
+.preview-fanart img {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  aspect-ratio: 16/9;
+  object-fit: cover;
 }
 
 .preview-info {
@@ -358,6 +371,11 @@ body {
 
   .preview-poster {
     width: 120px;
+  }
+
+  .preview-fanart {
+    width: 100%;
+    max-width: 300px;
   }
 
   .info-grid {

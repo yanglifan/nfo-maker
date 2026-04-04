@@ -11,6 +11,10 @@ const SELECTORS = {
   POSTER: '#mainpic img',
   INFO_BLOCK: '#info',
   INFO_LABEL: 'span.pl',
+  // Celebrities section - actor photos
+  CELEBRITY_LIST: '#celebrities .list-item',
+  CELEBRITY_NAME: '.name',
+  CELEBRITY_PHOTO: '.avatar img',
 };
 
 module.exports = { SELECTORS };

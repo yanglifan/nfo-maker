@@ -84,6 +84,15 @@ function renderPreview(data) {
     posterEl.style.display = 'none';
   }
 
+  // Fanart (landscape cover)
+  const fanartEl = document.getElementById('previewFanart');
+  if (data.fanart) {
+    fanartEl.src = data.fanart;
+    fanartEl.style.display = 'block';
+  } else {
+    fanartEl.style.display = 'none';
+  }
+
   // Title
   document.getElementById('previewTitle').textContent = data.title || '';
   document.getElementById('previewOrigTitle').textContent = data.originalTitle || '';

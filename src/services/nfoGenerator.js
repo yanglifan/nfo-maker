@@ -79,6 +79,7 @@ function generate(data) {
       xml += '  <actor>\n';
       xml += xmlTag('name', actor.name, '    ');
       xml += xmlTag('role', actor.role, '    ');
+      xml += xmlTag('thumb', actor.thumb, '    ');
       xml += '  </actor>\n';
     }
   }
@@ -100,6 +101,9 @@ function generate(data) {
 
   // Poster
   xml += xmlTag('poster', data.poster);
+
+  // Fanart (landscape cover for wall view)
+  xml += xmlTag('fanart', data.fanart);
 
   xml += `</${rootTag}>\n`;
 

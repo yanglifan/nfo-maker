@@ -100,8 +100,16 @@ async function fetchFollowRedirects(url, options, cookies) {
   throw new Error('重定向次数过多');
 }
 
-async function fetchPage(url, retries = 3) {
+/**
+ * Default content validator for movie/TV show main pages.
+ */
+function defaultContentValidator(body) {
+  return body.includes('v:itemreviewed') || body.includes('id="info"');
+}
+
+async function fetchPage(url, retries = 3, contentValidator) {
   const ua = randomUA();
+  const isValidContent = contentValidator || defaultContentValidator;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -118,7 +126,7 @@ async function fetchPage(url, retries = 3) {
       }
 
       // Check if we got the real page directly
-      if (result1.body.includes('v:itemreviewed') || result1.body.includes('id="info"')) {
+      if (isValidContent(result1.body)) {
         return result1.body;
       }
 
@@ -159,13 +167,13 @@ async function fetchPage(url, retries = 3) {
       }, result1.cookies);
 
       // After POST + redirect, we should have the real page
-      if (result2.body.includes('v:itemreviewed') || result2.body.includes('id="info"')) {
+      if (isValidContent(result2.body)) {
         return result2.body;
       }
 
       // If the POST redirect didn't land on the target, try one more GET
       const result3 = await fetchFollowRedirects(url, { ua }, result2.cookies);
-      if (result3.body.includes('v:itemreviewed') || result3.body.includes('id="info"')) {
+      if (isValidContent(result3.body)) {
         return result3.body;
       }
 
@@ -188,4 +196,177 @@ async function fetchPage(url, retries = 3) {
   }
 }
 
-module.exports = { fetchPage };
+/**
+ * Fetch actor photo from celebrity/personage page.
+ * Returns the avatar URL or empty string.
+ */
+async function fetchCelebrityPhoto(celebUrl, retries = 2) {
+  const ua = randomUA();
+  const cookies = `bid=${randomBid()}`;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const result = await fetchFollowRedirects(celebUrl, { ua }, cookies);
+
+      if (result.status !== 200) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, attempt * 1000));
+          continue;
+        }
+        return '';
+      }
+
+      // Check if we got a challenge page
+      const challenge = extractChallenge(result.body);
+      let finalBody = result.body;
+
+      if (challenge) {
+        // Solve the proof-of-work
+        const nonce = solveChallenge(challenge.cha, 4);
+        const challengeOrigin = new URL(result.finalUrl).origin;
+        const postUrl = challengeOrigin + '/c';
+
+        const formBody = new URLSearchParams({
+          tok: challenge.tok,
+          cha: challenge.cha,
+          sol: String(nonce),
+          red: challenge.red || celebUrl,
+        });
+
+        const result2 = await fetchFollowRedirects(postUrl, {
+          ua,
+          method: 'POST',
+          body: formBody.toString(),
+          extraHeaders: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Origin': challengeOrigin,
+            'Referer': result.finalUrl,
+          },
+        }, result.cookies);
+
+        finalBody = result2.body;
+      }
+
+      const $ = cheerio.load(finalBody);
+      // Actor avatar selector for personage page - use .avatar class
+      const avatarEl = $('img.avatar');
+      if (avatarEl.length) {
+        let photoUrl = avatarEl.attr('src') || '';
+        if (photoUrl) {
+          // Convert medium size to large: /m/ -> /l/
+          photoUrl = photoUrl.replace(/\/view\/celebrity\/m\//, '/view/celebrity/l/');
+          return photoUrl;
+        }
+      }
+
+      return '';
+    } catch {
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, attempt * 1000));
+        continue;
+      }
+      return '';
+    }
+  }
+}
+
+/**
+ * Fetch landscape fanart from movie/TV show photos page.
+ * Returns the first large photo URL (landscape-oriented) or empty string.
+ */
+async function fetchFanart(photosUrl, retries = 2) {
+  const ua = randomUA();
+  const cookies = `bid=${randomBid()}`;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const result = await fetchFollowRedirects(photosUrl, { ua }, cookies);
+
+      if (result.status !== 200) {
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, attempt * 1000));
+          continue;
+        }
+        return '';
+      }
+
+      // Check if we got a challenge page
+      const challenge = extractChallenge(result.body);
+      let finalBody = result.body;
+
+      if (challenge) {
+        // Solve the proof-of-work
+        const nonce = solveChallenge(challenge.cha, 4);
+        const challengeOrigin = new URL(result.finalUrl).origin;
+        const postUrl = challengeOrigin + '/c';
+
+        const formBody = new URLSearchParams({
+          tok: challenge.tok,
+          cha: challenge.cha,
+          sol: String(nonce),
+          red: challenge.red || photosUrl,
+        });
+
+        const result2 = await fetchFollowRedirects(postUrl, {
+          ua,
+          method: 'POST',
+          body: formBody.toString(),
+          extraHeaders: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Origin': challengeOrigin,
+            'Referer': result.finalUrl,
+          },
+        }, result.cookies);
+
+        finalBody = result2.body;
+      }
+
+      const $ = cheerio.load(finalBody);
+      // Find photos - typically in .article .photo-item or similar structure
+      // Try to get the first large image from the photos page
+      let fanartUrl = '';
+
+      // Try selector for large photo (poster section usually has larger images)
+      const largePhoto = $('.article a.cover').first();
+      if (largePhoto.length) {
+        fanartUrl = largePhoto.attr('href') || '';
+        // The href might be the photo detail page, we need the actual image
+        if (fanartUrl) {
+          // Extract image from photo detail page
+          const imgResult = await fetchFollowRedirects(fanartUrl, { ua }, result.cookies);
+          if (imgResult.status === 200) {
+            const $$ = cheerio.load(imgResult.body);
+            const img = $$('#mainpic img').first();
+            if (img.length) {
+              fanartUrl = img.attr('src') || '';
+              // Convert to large size and webp format
+              fanartUrl = fanartUrl.replace(/\/view\/photo\/[^/]+\//, '/view/photo/l/');
+              fanartUrl = fanartUrl.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
+            }
+          }
+        }
+      }
+
+      // Fallback: try direct image from photos list
+      if (!fanartUrl) {
+        const photoImg = $('.article .photo-list img').first();
+        if (photoImg.length) {
+          fanartUrl = photoImg.attr('src') || '';
+          // Convert to large size and webp format
+          fanartUrl = fanartUrl.replace(/\/view\/photo\/[^/]+\//, '/view/photo/l/');
+          fanartUrl = fanartUrl.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
+        }
+      }
+
+      return fanartUrl;
+    } catch {
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, attempt * 1000));
+        continue;
+      }
+      return '';
+    }
+  }
+}
+
+module.exports = { fetchPage, fetchCelebrityPhoto, fetchFanart, fetchFollowRedirects };

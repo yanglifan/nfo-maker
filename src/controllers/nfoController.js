@@ -10,7 +10,7 @@ async function parseDouban(req, res) {
       return res.status(400).json({ success: false, error: validation.error });
     }
 
-    const data = await scrape(url);
+    const data = await scrape(url, { requestInterval: 3 });
     res.json({ success: true, data });
   } catch (err) {
     console.error('Parse error:', err.message);
@@ -35,7 +35,7 @@ async function generateNfo(req, res) {
       if (!validation.valid) {
         return res.status(400).json({ success: false, error: validation.error });
       }
-      data = await scrape(url);
+      data = await scrape(url, { requestInterval: 3 });
       if (type) data.type = type;
     } else {
       return res.status(400).json({ success: false, error: '请提供豆瓣 URL 或影视数据' });
