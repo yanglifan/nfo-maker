@@ -1,0 +1,414 @@
+/* Cron Management Page Styles */
+
+.cron-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background: var(--primary-color, #00b51d);
+  color: #fff;
+  padding: 16px 24px;
+}
+
+.header-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.back-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.back-link:hover {
+  opacity: 1;
+}
+
+/* Status Cards */
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.status-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.card-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+#card-enabled .card-value {
+  color: var(--primary-color, #00b51d);
+}
+
+#card-running.running .card-value {
+  color: #ff9800;
+}
+
+#card-running.idle .card-value {
+  color: var(--primary-color, #00b51d);
+}
+
+#card-running.disabled .card-value {
+  color: #999;
+}
+
+/* Config Section */
+.config-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.config-section h2,
+.logs-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  margin-bottom: 16px;
+}
+
+.form-row label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.form-row input[type="text"],
+.form-row input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-row input:focus {
+  outline: none;
+  border-color: var(--primary-color, #00b51d);
+}
+
+.hint {
+  display: block;
+  color: #888;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-row-inline {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row-half {
+  flex: 1;
+}
+
+/* Toggle Switch */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #444;
+}
+
+.toggle-label input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.toggle-label input:checked + .toggle-slider {
+  background: var(--primary-color, #00b51d);
+}
+
+.toggle-label input:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+
+/* Scan Dirs */
+#scan-dirs-list {
+  margin-bottom: 8px;
+}
+
+.scan-dir-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.scan-dir-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.scan-dir-row input:focus {
+  outline: none;
+  border-color: var(--primary-color, #00b51d);
+}
+
+.btn-remove-dir {
+  padding: 8px 12px;
+  background: #ffebee;
+  color: #d32f2f;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-remove-dir:hover {
+  background: #ffcdd2;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: var(--primary-color, #00b51d);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #eee;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.save-msg {
+  margin-top: 10px;
+  font-size: 14px;
+  min-height: 20px;
+}
+
+.save-msg.success {
+  color: var(--primary-color, #00b51d);
+}
+
+.save-msg.error {
+  color: #d32f2f;
+}
+
+/* Logs Table */
+.logs-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.logs-table-wrapper {
+  overflow-x: auto;
+}
+
+#logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#logs-table th {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 2px solid #eee;
+  font-size: 13px;
+  color: #666;
+  font-weight: 600;
+}
+
+#logs-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+
+#logs-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+#logs-table tbody tr.expanded td {
+  background: #f0faf0;
+}
+
+.log-detail-row {
+  display: none;
+}
+
+.log-detail-row.visible {
+  display: table-row;
+}
+
+.log-detail-content {
+  padding: 12px 10px 12px 30px;
+  font-size: 13px;
+  color: #555;
+  background: #f9f9f9;
+}
+
+.log-detail-content .detail-dir {
+  padding: 4px 0;
+}
+
+.log-detail-content .detail-dir.updated {
+  color: var(--primary-color, #00b51d);
+}
+
+.log-detail-content .detail-dir.error {
+  color: #d32f2f;
+}
+
+.trigger-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.trigger-badge.cron {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.trigger-badge.manual {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.trigger-badge.startup {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.loading-row td {
+  text-align: center;
+  color: #999;
+}
+
+#btn-load-more {
+  margin-top: 12px;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row-inline {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  #logs-table th:nth-child(4),
+  #logs-table td:nth-child(4),
+  #logs-table th:nth-child(6),
+  #logs-table td:nth-child(6) {
+    display: none;
+  }
+}

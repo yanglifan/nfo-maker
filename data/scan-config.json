@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "cron": "0 2 * * *",
+  "scanDirs": [
+    "/tmp/test-media"
+  ],
+  "requestInterval": 3,
+  "limit": 1000,
+  "scanOnStart": false
+}

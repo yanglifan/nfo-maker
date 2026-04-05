@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  nfo-maker:
+    image: node:18-alpine
+    container_name: nfo-maker
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      # 挂载应用代码
+      - ./app:/app
+      # 挂载需要扫描的媒体目录（请根据实际路径修改）
+      - ${MEDIA_DIR_1:-/media/movies}:/data/media1:rw
+      - ${MEDIA_DIR_2:-/media/tvshows}:/data/media2:rw
+      # 挂载配置和日志目录（持久化）
+      - ./data:/app/data
+      # 挂载 npm 缓存目录
+      - npm_cache:/root/.npm
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    command: >
+      sh -c "
+        npm install --production &&
+        echo '启动 NFO Maker 服务...' &&
+        echo 'Web UI: http://localhost:${WEB_PORT:-3000}' &&
+        echo '定时任务管理: http://localhost:${WEB_PORT:-3000}/cron' &&
+        node server.js
+      "
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  npm_cache:

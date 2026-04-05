@@ -1,7 +1,9 @@
 const express = require('express');
 const path = require('path');
 const apiRoutes = require('./src/routes/api');
+const cronRoutes = require('./src/routes/cron');
 const { scanDirectory } = require('./src/services/batchScanner');
+const scanScheduler = require('./src/services/scanScheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
 app.use('/api', apiRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Manual scan trigger API
 app.post('/api/scan', async (req, res) => {
@@ -64,43 +67,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: '服务器内部错误' });
 });
 
-// Setup scheduled scan if environment variables are set
-function setupScheduledScan() {
-  const cronExpression = process.env.SCAN_CRON;
-  const scanDirs = process.env.SCAN_DIRS;
-  const scanInterval = parseInt(process.env.SCAN_INTERVAL, 10) || 3;
-
-  if (!cronExpression || !scanDirs) {
-    console.log('Scheduled scan not configured (set SCAN_CRON and SCAN_DIRS env vars)');
-    return;
-  }
-
-  try {
-    const cron = require('node-cron');
-    const dirs = scanDirs.split(',').map(d => d.trim()).filter(Boolean);
-
-    cron.schedule(cronExpression, async () => {
-      console.log(`[Scheduled Scan] Starting scan for: ${dirs.join(', ')}`);
-      try {
-        for (const dir of dirs) {
-          await scanDirectory(dir, {
-            requestInterval: scanInterval
-          });
-        }
-        console.log('[Scheduled Scan] Completed');
-      } catch (err) {
-        console.error('[Scheduled Scan] Error:', err.message);
-      }
-    });
-
-    console.log(`Scheduled scan configured: cron="${cronExpression}", dirs=[${dirs.join(', ')}]`);
-  } catch (err) {
-    console.error('Failed to setup scheduled scan:', err.message);
-    console.log('Tip: Run "npm install node-cron" to enable scheduled scanning');
-  }
-}
-
 app.listen(PORT, () => {
   console.log(`NFO Maker server running at http://localhost:${PORT}`);
-  setupScheduledScan();
+  scanScheduler.initialize();
 });

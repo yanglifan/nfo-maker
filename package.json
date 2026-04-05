@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "scan": "node src/cli/scan.js"
+    "scan": "node src/cli/scan.js",
+    "scan:scheduled": "node src/cli/scheduled-runner.js"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>定时任务管理 - NFO Maker</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/cron.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>定时任务管理</h1>
+      <a href="/" class="back-link">&larr; 返回主页</a>
+    </div>
+  </header>
+
+  <main class="cron-container">
+    <!-- Status Cards -->
+    <section class="status-cards">
+      <div class="status-card" id="card-enabled">
+        <div class="card-icon">&#x23f0;</div>
+        <div class="card-label">启用状态</div>
+        <div class="card-value" id="status-enabled">--</div>
+      </div>
+      <div class="status-card" id="card-running">
+        <div class="card-icon">&#x25cf;</div>
+        <div class="card-label">当前状态</div>
+        <div class="card-value" id="status-running">--</div>
+      </div>
+      <div class="status-card" id="card-next">
+        <div class="card-icon">&#x1f552;</div>
+        <div class="card-label">下次执行</div>
+        <div class="card-value" id="status-next">--</div>
+      </div>
+    </section>
+
+    <!-- Config Form -->
+    <section class="config-section">
+      <h2>配置</h2>
+      <form id="config-form">
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="cfg-enabled" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">启用定时扫描</span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="cfg-cron">Cron 表达式</label>
+          <input type="text" id="cfg-cron" placeholder="0 2 * * *" value="0 2 * * *">
+          <small class="hint">格式: 分 时 日 月 星期</small>
+        </div>
+
+        <div class="form-row">
+          <label>扫描目录</label>
+          <div id="scan-dirs-list"></div>
+          <button type="button" id="btn-add-dir" class="btn-secondary">+ 添加目录</button>
+        </div>
+
+        <div class="form-row-inline">
+          <div class="form-row form-row-half">
+            <label for="cfg-interval">请求间隔（秒）</label>
+            <input type="number" id="cfg-interval" min="1" value="3">
+          </div>
+          <div class="form-row form-row-half">
+            <label for="cfg-limit">每次扫描限制</label>
+            <input type="number" id="cfg-limit" min="1" value="1000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="cfg-start" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">启动时立即扫描</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="btn-save" class="btn-primary">保存配置</button>
+          <button type="button" id="btn-scan" class="btn-secondary">手动触发扫描</button>
+        </div>
+        <div id="save-msg" class="save-msg"></div>
+      </form>
+    </section>
+
+    <!-- Logs Table -->
+    <section class="logs-section">
+      <h2>运行日志</h2>
+      <div class="logs-table-wrapper">
+        <table id="logs-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>触发方式</th>
+              <th>开始时间</th>
+              <th>持续时间</th>
+              <th>更新</th>
+              <th>跳过</th>
+            </tr>
+          </thead>
+          <tbody id="logs-body">
+            <tr class="loading-row">
+              <td colspan="6">加载中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button type="button" id="btn-load-more" class="btn-secondary" style="display:none;">加载更多</button>
+    </section>
+  </main>
+
+  <script src="js/cron.js"></script>
+</body>
+</html>
